@@ -14,25 +14,18 @@ const SALAMANDER_URL = 'https://storage.googleapis.com/download.magenta.tensorfl
 class PianoGenie {
     private sampler: any;
     private ui: PianoGenieUI;
-
     private buttonToNoteMap: Map<number, number>;
-
     private lookAheadPreds!: number[];
 
-    private initLookAhead() {
-        const numButtons = 8;
-        this.lookAheadPreds = [];
-        for (let i = 0; i < numButtons; ++i) {
-            this.lookAheadPreds.push(-1);
-        }
-    }
     constructor(sampler: any, ui: PianoGenieUI) {
         this.sampler = sampler;
         this.ui = ui;
-
         this.buttonToNoteMap = new Map<number, number>();
 
-        this.initLookAhead();
+        this.lookAheadPreds = [];
+        for (let i = 0; i < 8; ++i) {
+            this.lookAheadPreds.push(-1);
+        }
         document.onkeydown = (evt: KeyboardEvent) => {
             if (Tone.context.state !== 'running') {
                 Tone.context.resume();
@@ -63,8 +56,6 @@ class PianoGenie {
         this.sampler.keyDown(note, undefined, 0.2);
 
         // Draw
-        // this.lookAheadPreds = [];
-        // this.lookAheadPreds.push(note);
         this.lookAheadPreds[button] = note;
         this.ui.genieCanvas.redraw(this.buttonToNoteMap);
         this.redrawPiano();
@@ -75,7 +66,6 @@ class PianoGenie {
         this.sampler.keyUp(note);
         this.buttonToNoteMap.delete(button);
 
-        // this.lookAheadPreds.pop();
         this.lookAheadPreds[button] = -1;
         this.ui.genieCanvas.redraw(this.buttonToNoteMap);
         this.redrawPiano();
