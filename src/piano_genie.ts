@@ -1,12 +1,5 @@
-//import * as tf from '@tensorflow/tfjs-core';
-import * as PianoGenieModel from './model';
 import { PianoGenieUI } from './ui';
-import { ALL_CONFIGS, DEFAULT_CFG_NAME, PianoGenieConfig } from './configs';
-//import { LSTMState, LSTMStateUtil } from './lstm_state';
-//import * as Sample from './sample';
 const Tone = require('tone')
-// import * as Tone from 'tone';
-// tslint:disable-next-line:no-require-imports
 const PianoSampler = require('tone-piano').Piano;
 
 const SALAMANDER_URL = 'https://storage.googleapis.com/download.magenta.tensorflow.org/demos/SalamanderPiano/';
@@ -91,11 +84,7 @@ if (!div) {
     throw new Error('piano-genie-ui is null.');  
 }
 div.appendChild(ui.div);
-
-const defaultCfg = ALL_CONFIGS[DEFAULT_CFG_NAME];
-ui.genieCanvas.resize(defaultCfg.modelCfg.getNumButtons());
-ui.setUserParameters(defaultCfg.defaultUserParameters);
-
+ui.genieCanvas.resize(8);
 const sampler = new PianoSampler({ velocities: 4 }).toMaster();
 
 Promise.all([
