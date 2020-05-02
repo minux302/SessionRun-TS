@@ -1,10 +1,13 @@
+import * as tf from '@tensorflow/tfjs';
+import * as tfn from '@tensorflow/tfjs-node';
+// import {loadGraphModel} from '@tensorflow/tfjs-converter';
 import { PianoGenieUI } from './ui';
 const Tone = require('tone')
 const PianoSampler = require('tone-piano').Piano;
 
 const SALAMANDER_URL = 'https://storage.googleapis.com/download.magenta.tensorflow.org/demos/SalamanderPiano/';
 
-class PianoGenie {
+class SessionRun {
     private sampler: any;
     private ui: PianoGenieUI;
     private buttonToNoteMap: Map<number, number>;
@@ -78,18 +81,23 @@ class PianoGenie {
     }
 }
 
-const ui = new PianoGenieUI();
-const div = document.getElementById('piano-genie-ui');
-if (!div) {  
-    throw new Error('piano-genie-ui is null.');  
-}
-div.appendChild(ui.div);
-ui.genieCanvas.resize(8);
-const sampler = new PianoSampler({ velocities: 4 }).toMaster();
+window.onload = () => {
+  const ui = new PianoGenieUI();
+  const div = document.getElementById('piano-genie-ui');
+  if (!div) {  
+      throw new Error('piano-genie-ui is null.');  
+  }
+  div.appendChild(ui.div);
+  ui.genieCanvas.resize(8);
 
-Promise.all([
-  sampler.load(SALAMANDER_URL)])
-  .then(() => {
-    new PianoGenie(sampler, ui);
-    ui.setReady();
-  });
+  const sampler = new PianoSampler({ velocities: 4 }).toMaster();
+  let model;
+  Promise.all([
+    model = tf.loadGraphModel('web_model/model.json'),
+    sampler.load(SALAMANDER_URL)])
+    .then(() => {
+      new SessionRun(sampler, ui);
+      ui.setReady();
+    }
+  );
+}
