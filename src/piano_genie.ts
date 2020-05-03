@@ -22,19 +22,7 @@ class SessionRun {
   private buttonToNoteMap: Map<number, number>;
   private lookAheadPreds!: number[];
 
-  constructor(model: tf.GraphModel, mcfg: ModelConfig, sampler: any, ui: PianoGenieUI) {
-    this.model = model;
-    this.seqLen = mcfg.seqLen;
-    this.numButton = mcfg.numButton;
-    this.sampler = sampler;
-    this.ui = ui;
-    this.buttonToNoteMap = new Map<number, number>();
-
-    // Todo: Refactor
-    this.lookAheadPreds = [];
-    for (let i = 0; i < this.seqLen; ++i) {
-        this.lookAheadPreds.push(-1);
-    }
+  private setKeyUpDown (): void {
     document.onkeydown = (evt: KeyboardEvent) => {
         if (Tone.context.state !== 'running') {
             Tone.context.resume();
@@ -56,6 +44,24 @@ class SessionRun {
             }
         }
     };
+  }
+
+  constructor(model: tf.GraphModel,
+              mcfg: ModelConfig,
+              sampler: any,
+              ui: PianoGenieUI) {
+    this.model = model;
+    this.seqLen = mcfg.seqLen;
+    this.numButton = mcfg.numButton;
+    this.sampler = sampler;
+    this.ui = ui;
+    this.buttonToNoteMap = new Map<number, number>();
+
+    this.setKeyUpDown();
+    this.lookAheadPreds = [];
+    for (let i = 0; i < this.seqLen; ++i) {
+        this.lookAheadPreds.push(-1);
+    }
   };
 
   private async predict(keySeq: number[], chordSeq: number []) {
@@ -66,7 +72,6 @@ class SessionRun {
     encSeqT = tf.cast(encSeq, 'float32').expandDims();
     encSeqT = tf.reshape(encSeqT, [1, this.seqLen, 1]);
     chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
-    chordSeqT = tf.reshape(chordSeqT, [1, this.seqLen]);
 
     const inputs: {[name: string]: tf.Tensor} = {};
     inputs['input/enc_pl'] = encSeqT;
