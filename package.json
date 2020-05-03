@@ -20,7 +20,6 @@
   },
   "scripts": {
     "build": "browserify src/main.ts -p [tsify] > src/main.js",
-    "test": "ts-node node_modules/tape/bin/tape src/*_test.ts",
     "serve": "http-server src"
   },
   "description": "This model is the user interface and inference component of [Piano Genie](https://github.com/tensorflow/magenta/tree/master/magenta/models/piano_genie). Piano Genie allows you to control an 88-key piano via an intelligent 8-button interface.",
