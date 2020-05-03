@@ -109,23 +109,22 @@ class SessionRun {
   }
 
   private pressButton(button: number) {
-    // const note = button + 21;
-    const note = button + 21 + 39;
-    this.buttonToNoteMap.set(button, note);
 
     const keySeq: number[] = [0, 1, 2, 3, 4, 5, 6, 7,
                               1, 1, 3, 4, 5, 5, 5, 3]
     const chordSeq: number[] = [14, 14, 14, 14, 14, 14, 14, 14,
                                 7,  7,  7,  7,  7,  7,  7,  7]
-    Promise.all([this.predict(keySeq, chordSeq)])
+    this.predict(keySeq, chordSeq)
       .then((predNote) => {
         // Sound
-        this.sampler.keyDown(note, undefined, 0.2);
+        this.sampler.keyDown(predNote, undefined, 0.2);
+        this.buttonToNoteMap.set(button, predNote);
         // Draw
-        this.lookAheadPreds[button] = note;
+        this.lookAheadPreds[button] = predNote;
         this.ui.genieCanvas.redraw(this.buttonToNoteMap);
         this.redrawPiano();
-    });
+      }
+    );
   }
 
   private releaseButton(button: number) {
