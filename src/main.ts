@@ -109,12 +109,11 @@ class SessionRun {
   }
 
   private pressButton(button: number) {
-
-    const keySeq: number[] = [0, 1, 2, 3, 4, 5, 6, 7,
-                              1, 1, 3, 4, 5, 5, 5, 3]
+    this.currKeySeq.shift();
+    this.currKeySeq.push(button);
     const chordSeq: number[] = [14, 14, 14, 14, 14, 14, 14, 14,
                                 7,  7,  7,  7,  7,  7,  7,  7]
-    this.predict(keySeq, chordSeq)
+    this.predict(this.currKeySeq, chordSeq)
       .then((predNote) => {
         // Sound
         this.sampler.keyDown(predNote, undefined, 0.2);
