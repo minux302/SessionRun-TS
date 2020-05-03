@@ -14,13 +14,39 @@ function convertKeySeq(key: number) {
 
 
 class SessionRun {
+  // model configs
   private model: tf.GraphModel;
   private seqLen: number;
   private numButton: number;
+  private numClass: number;
+
+  // inner status
+  private currKeySeq: number[];
+  private currChordSeq: number[];
+  private lookAheadPreds: number[];
+  private buttonToNoteMap: Map<number, number>;
+
   private sampler: any;
   private ui: PianoGenieUI;
-  private buttonToNoteMap: Map<number, number>;
-  private lookAheadPreds: number[];
+
+  constructor(model: tf.GraphModel,
+              mcfg: ModelConfig,
+              sampler: any,
+              ui: PianoGenieUI) {
+    this.model = model;
+    this.seqLen = mcfg.seqLen;
+    this.numButton = mcfg.numButton;
+    this.numClass = mcfg.numClass;
+    this.currKeySeq = [];
+    this.currChordSeq = [];
+    this.lookAheadPreds = [];
+    this.sampler = sampler;
+    this.ui = ui;
+    this.buttonToNoteMap = new Map<number, number>();
+
+    this.setKeyUpDown();
+    this.initInnerStatus();
+  };
 
   private setKeyUpDown (): void {
     document.onkeydown = (evt: KeyboardEvent) => {
@@ -46,27 +72,17 @@ class SessionRun {
     };
   }
 
-  private initLookAheadPreds(): void {
+  private initInnerStatus(): void {
+    for (let i = 0; i < this.seqLen; i++) {
+      this.currKeySeq.push(Math.floor(Math.random() * Math.floor(this.numButton)));
+    }
+    for (let i = 0; i < this.seqLen; i++) {
+      this.currChordSeq.push(Math.floor(Math.random() * Math.floor(this.numClass)));
+    }
     for (let i = 0; i < this.seqLen; ++i) {
         this.lookAheadPreds.push(-1);
     }
   }
-
-  constructor(model: tf.GraphModel,
-              mcfg: ModelConfig,
-              sampler: any,
-              ui: PianoGenieUI) {
-    this.model = model;
-    this.seqLen = mcfg.seqLen;
-    this.numButton = mcfg.numButton;
-    this.sampler = sampler;
-    this.ui = ui;
-    this.buttonToNoteMap = new Map<number, number>();
-    this.lookAheadPreds = [];
-
-    this.setKeyUpDown();
-    this.initLookAheadPreds();
-  };
 
   private async predict(keySeq: number[], chordSeq: number []) {
     let encSeqT:tf.Tensor;
@@ -103,47 +119,41 @@ class SessionRun {
                                 7,  7,  7,  7,  7,  7,  7,  7]
     Promise.all([this.predict(keySeq, chordSeq)])
       .then((predNote) => {
-        console.log(predNote);
+        // Sound
         this.sampler.keyDown(note, undefined, 0.2);
+        // Draw
         this.lookAheadPreds[button] = note;
         this.ui.genieCanvas.redraw(this.buttonToNoteMap);
         this.redrawPiano();
     });
-
-    // this.sampler.keyDown(note, undefined, 0.2);
-    // Draw
-    // this.lookAheadPreds[button] = note;
-    // this.ui.genieCanvas.redraw(this.buttonToNoteMap);
-    // this.redrawPiano();
   }
 
-    private releaseButton(button: number) {
-        const note = this.buttonToNoteMap.get(button);
-        this.sampler.keyUp(note);
-        this.buttonToNoteMap.delete(button);
+  private releaseButton(button: number) {
+    const note = this.buttonToNoteMap.get(button);
+    this.sampler.keyUp(note);
+    this.buttonToNoteMap.delete(button);
 
-        this.lookAheadPreds[button] = -1;
-        this.ui.genieCanvas.redraw(this.buttonToNoteMap);
-        this.redrawPiano();
+    this.lookAheadPreds[button] = -1;
+    this.ui.genieCanvas.redraw(this.buttonToNoteMap);
+    this.redrawPiano();
+  }
+
+  private redrawPiano() {
+    const noteToHueLightnessMap = new Map<number, [number, number]>();
+    for (let i = 0; i < this.numButton; ++i) {
+      const hue = this.ui.genieCanvas.getHue(i);
+      if (this.lookAheadPreds !== undefined) {
+        noteToHueLightnessMap.set(this.lookAheadPreds[i], [hue, 75]);
+      }
     }
-
-    private redrawPiano() {
-        const noteToHueLightnessMap = new Map<number, [number, number]>();
-        const numButtons = 8;
-
-        for (let i = 0; i < numButtons; ++i) {
-            const hue = this.ui.genieCanvas.getHue(i);
-            if (this.lookAheadPreds !== undefined) {
-                noteToHueLightnessMap.set(this.lookAheadPreds[i], [hue, 75]);
-            }
-        }
-        this.ui.pianoCanvas.redraw(noteToHueLightnessMap);
-    }
+    this.ui.pianoCanvas.redraw(noteToHueLightnessMap);
+  }
 }
 
 const ui = new PianoGenieUI();
 const mcfg = new ModelConfig();
-const scfg = new SystemConfig();
+// const scfg = new SystemConfig();
+
 const div = document.getElementById('piano-genie-ui');
 if (!div) {  
     throw new Error('piano-genie-ui is null.');  
