@@ -57,38 +57,34 @@ class SessionRun {
 
   private async predict(keySeq: number[], chordSeq: number []) {
     const encSeq = keySeq.map(convertKeySeq);
+    let encSeqT = tf.cast(encSeq, 'float32').expandDims();
+    let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
+    encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
+    chordSeqT = tf.reshape(chordSeqT, [1, 16]);
+    const inputs: {[name: string]: tf.Tensor} = {};
+    inputs['input/enc_pl'] = encSeqT;
+    inputs['input/chord_pl'] = chordSeqT;
+    const output = (await this.model.executeAsync(inputs) as tf.Tensor);
+    encSeqT.dispose();
+    chordSeqT.dispose();
+    console.log(tf.argMax(output, 1).print());
+    //   // console.log(output.print());
+    // 
     // const output = tf.tidy(() => {
-    //   const encSeqT = tf.cast(encSeq, 'float32').expandDims();
-    //   const chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
-    //   const outputPromise = await this.model.executeAsync([encSeqT,
-    //                                                        chordSeqT]);
-    //   return await outputPromise.data();
+    //   let encSeqT = tf.cast(encSeq, 'float32').expandDims();
+    //   let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
+    //   encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
+    //   chordSeqT = tf.reshape(chordSeqT, [1, 16]);
+
+    //   const inputs: {[name: string]: tf.Tensor} = {};
+    //   inputs['input/enc_pl'] = encSeqT;
+    //   inputs['input/chord_pl'] = chordSeqT;
+    //   // const output = (this.model.predict(inputs) as tf.Tensor);
+    //   const output = await this.model.executeAsync(inputs);
+    //         // console.log(output.shape);
+    //   // console.log(output.print());
     // });
-    // let encSeqT = tf.cast(encSeq, 'float32').expandDims();
-    // let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
-    // encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
-    // chordSeqT = tf.reshape(chordSeqT, [1, 16]);
-
-    // const inputs: {[name: string]: tf.Tensor} = {};
-    // inputs['input/enc_pl'] = encSeqT;
-    // inputs['input/chord_pl'] = chordSeqT;
-    // const outputPromise = await this.model.predict([encSeqT,
-    //                                                 chordSeqT]);
-    // const outputPromise = await this.model.predict(inputs);
-    // const outputPromise = await this.model.executeAsync(inputs);
-
-    const output = tf.tidy(() => {
-      let encSeqT = tf.cast(encSeq, 'float32').expandDims();
-      let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
-      encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
-      chordSeqT = tf.reshape(chordSeqT, [1, 16]);
-
-      const inputs: {[name: string]: tf.Tensor} = {};
-      inputs['input/enc_pl'] = encSeqT;
-      const outputPromise = await this.model.predict(inputs);
-      // const output = await outputPromise.data();
-      return outputPromise;
-    });
+    // const outputArray = Array.prototype.slice.call(output);  // Todo. what is this ?
     // const outputPromise = await this.model.execute(inputs);
     // const output = await outputPromise.data();
     // const outputArray = Array.prototype.slice.call(output);  // Todo. what is this ?
@@ -100,18 +96,24 @@ class SessionRun {
     // const note = button + 21;
     const note = button + 21 + 39;
     this.buttonToNoteMap.set(button, note);
-    this.sampler.keyDown(note, undefined, 0.2);
 
     const keySeq: number[] = [0, 1, 2, 3, 4, 5, 6, 7,
                               1, 1, 3, 4, 5, 5, 5, 3]
     const chordSeq: number[] = [14, 14, 14, 14, 14, 14, 14, 14,
                                 7,  7,  7,  7,  7,  7,  7,  7]
-    this.predict(keySeq, chordSeq);
+    Promise.all([this.predict(keySeq, chordSeq)])
+      .then(() => {
+        this.sampler.keyDown(note, undefined, 0.2);
+        this.lookAheadPreds[button] = note;
+        this.ui.genieCanvas.redraw(this.buttonToNoteMap);
+        this.redrawPiano();
+    });
 
+    // this.sampler.keyDown(note, undefined, 0.2);
     // Draw
-    this.lookAheadPreds[button] = note;
-    this.ui.genieCanvas.redraw(this.buttonToNoteMap);
-    this.redrawPiano();
+    // this.lookAheadPreds[button] = note;
+    // this.ui.genieCanvas.redraw(this.buttonToNoteMap);
+    // this.redrawPiano();
   }
 
     private releaseButton(button: number) {
@@ -147,10 +149,11 @@ div.appendChild(ui.div);
 ui.genieCanvas.resize(8);
 
 const sampler = new PianoSampler({ velocities: 4 }).toMaster();
-async function load() {
-  const model:tf.GraphModel = await tf.loadGraphModel('web_model/model.json');
-  await sampler.load(SALAMANDER_URL);
-  new SessionRun(model, sampler, ui);
-  ui.setReady();
-}
-load();
+Promise.all([
+  tf.loadGraphModel('web_model/model.json'),
+  sampler.load(SALAMANDER_URL)])
+  .then(([model, _]) => {
+    new SessionRun(model, sampler, ui);
+    ui.setReady();
+  }
+);
