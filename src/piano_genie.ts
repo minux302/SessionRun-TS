@@ -64,19 +64,31 @@ class SessionRun {
     //                                                        chordSeqT]);
     //   return await outputPromise.data();
     // });
-    let encSeqT = tf.cast(encSeq, 'float32').expandDims();
-    let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
-    encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
-    // encSeqT = tf.reshape(encSeqT, [1, 16]);
-    chordSeqT = tf.reshape(chordSeqT, [1, 16]);
+    // let encSeqT = tf.cast(encSeq, 'float32').expandDims();
+    // let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
+    // encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
+    // chordSeqT = tf.reshape(chordSeqT, [1, 16]);
 
-    const inputs: {[name: string]: tf.Tensor} = {};
-    inputs['input/enc_pl'] = encSeqT;
-    inputs['input/chord_pl'] = chordSeqT;
+    // const inputs: {[name: string]: tf.Tensor} = {};
+    // inputs['input/enc_pl'] = encSeqT;
+    // inputs['input/chord_pl'] = chordSeqT;
     // const outputPromise = await this.model.predict([encSeqT,
     //                                                 chordSeqT]);
     // const outputPromise = await this.model.predict(inputs);
-    const outputPromise = await this.model.executeAsync(inputs);
+    // const outputPromise = await this.model.executeAsync(inputs);
+
+    const output = tf.tidy(() => {
+      let encSeqT = tf.cast(encSeq, 'float32').expandDims();
+      let chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
+      encSeqT = tf.reshape(encSeqT, [1, 16, 1]);
+      chordSeqT = tf.reshape(chordSeqT, [1, 16]);
+
+      const inputs: {[name: string]: tf.Tensor} = {};
+      inputs['input/enc_pl'] = encSeqT;
+      const outputPromise = await this.model.predict(inputs);
+      // const output = await outputPromise.data();
+      return outputPromise;
+    });
     // const outputPromise = await this.model.execute(inputs);
     // const output = await outputPromise.data();
     // const outputArray = Array.prototype.slice.call(output);  // Todo. what is this ?
