@@ -20,7 +20,7 @@ class SessionRun {
   private sampler: any;
   private ui: PianoGenieUI;
   private buttonToNoteMap: Map<number, number>;
-  private lookAheadPreds!: number[];
+  private lookAheadPreds: number[];
 
   private setKeyUpDown (): void {
     document.onkeydown = (evt: KeyboardEvent) => {
@@ -46,6 +46,12 @@ class SessionRun {
     };
   }
 
+  private initLookAheadPreds(): void {
+    for (let i = 0; i < this.seqLen; ++i) {
+        this.lookAheadPreds.push(-1);
+    }
+  }
+
   constructor(model: tf.GraphModel,
               mcfg: ModelConfig,
               sampler: any,
@@ -56,12 +62,10 @@ class SessionRun {
     this.sampler = sampler;
     this.ui = ui;
     this.buttonToNoteMap = new Map<number, number>();
+    this.lookAheadPreds = [];
 
     this.setKeyUpDown();
-    this.lookAheadPreds = [];
-    for (let i = 0; i < this.seqLen; ++i) {
-        this.lookAheadPreds.push(-1);
-    }
+    this.initLookAheadPreds();
   };
 
   private async predict(keySeq: number[], chordSeq: number []) {
