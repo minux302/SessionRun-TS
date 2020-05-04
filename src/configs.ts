@@ -1,7 +1,8 @@
 export class ModelConfig {
-  seqLen:number = 16;
-  numButton:number = 8;
-  numClass:number = 129;
+  seqLen: number = 16;
+  numButton: number = 8;
+  numClass: number = 129;
+  numNoteInBar: number = 8;
 }
 
 export class SystemConfig {
