@@ -1,5 +1,5 @@
 export class ModelConfig {
-  seqLen: number = 16;
+  seqLen: number = 8;
   numButton: number = 8;
   numClass: number = 129;
   numNoteInBar: number = 8;
