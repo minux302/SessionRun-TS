@@ -8,32 +8,6 @@ const PianoSampler = require('tone-piano').Piano;
 const SALAMANDER_URL = 'https://storage.googleapis.com/download.magenta.tensorflow.org/demos/SalamanderPiano/';
 
 
-function convertKeySeq(key: number) {
-  const scale = 7
-  return 2 * (key / scale) - 1
-}
-
-
-function createFullChordSeq(chordIdList: number[], numNoteInBar: number): number[] {
-  let fullChordIdList: number[] = [];
-  for (let chordId of chordIdList) {
-    for (let i = 0; i < numNoteInBar; i++) {
-      fullChordIdList.push(chordId);
-    }
-  }
-  return fullChordIdList;
-}
-
-
-function songStart(songName: string): number{
-  const audioElem = new Audio(`{$songName}.mp3`);  
-  audioElem.volume = 0.5;
-  audioElem.play();
-  return Math.floor(Date.now() / 1000);
-}
-
-
-
 class SessionRun {
   // model configs
   private model: tf.GraphModel;
@@ -67,7 +41,7 @@ class SessionRun {
     let tempo: number;
     [tempo, ChordIdList] = songFactory(scfg.songName)
     this.secondsPerChord   = (60*4) / tempo;
-    this.fullChordIdList = createFullChordSeq(ChordIdList, mcfg.numNoteInBar)
+    this.fullChordIdList = this.createFullChordSeq(ChordIdList, mcfg.numNoteInBar)
 
     this.currKeySeq = [];
     this.currChordSeq = [];
@@ -79,7 +53,7 @@ class SessionRun {
     this.buttonToNoteMap = new Map<number, number>();
     this.setKeyUpDown();
 
-    this.startTime = songStart(scfg.songName) + this.secondsPerChord; // since first bar is blank, tmp
+    this.startTime = this.songStart(scfg.songName) + this.secondsPerChord; // since first bar is blank, tmp
   };
 
   private setKeyUpDown (): void {
@@ -118,10 +92,38 @@ class SessionRun {
     }
   }
 
+  private createFullChordSeq(chordIdList: number[], numNoteInBar: number): number[] {
+    let fullChordIdList: number[] = [];
+    // insert dummy initial chord sequence.
+    for (let i = 0; i < this.seqLen; i++) {
+      fullChordIdList.push(chordIdList[0]);
+    }
+    for (let chordId of chordIdList) {
+      for (let i = 0; i < numNoteInBar; i++) {
+        fullChordIdList.push(chordId);
+      }
+    }
+    return fullChordIdList;
+  }
+
+  private songStart(songName: string): number{
+    // const audioElem = new Audio(`{$songName}.mid`);  
+    const audioElem = new Audio(`autumn_leaves.mp3`);  
+    audioElem.volume = 0.5;
+    audioElem.play();
+    return Math.floor(Date.now() / 1000);
+  }
+
+  private convertKeySeq(key: number) {
+    // const scale = this.numButton - 1; 
+    const scale = 8 - 1; 
+    return 2 * (key / scale) - 1;
+  }
+
   private async predict(keySeq: number[], chordSeq: number []) {
     let encSeqT: tf.Tensor;
     let chordSeqT: tf.Tensor;
-    const encSeq = keySeq.map(convertKeySeq);
+    const encSeq = keySeq.map(this.convertKeySeq);
 
     encSeqT = tf.cast(encSeq, 'float32').expandDims();
     encSeqT = tf.reshape(encSeqT, [1, this.seqLen, 1]);
@@ -144,21 +146,21 @@ class SessionRun {
 
   private pressButton(button: number) {
     // let lastTime = Date.now();
-    // const fromStartTimeSec = (Date.now() - this.startTime) / 1000;
+    const fromStartTimeSec = Math.floor(Date.now() / 1000) - this.startTime;
     // fromLastPredTimeSec = (Date.now() - lastTime)  / 1000;
     // lastTime            = Date.now();
-    // const currentChord = songChordList[divInt(fromStartTimeSec, secondsPerChord)];
-    // const restNoteNum  = divInt(fromLastPredTimeSec, secondsPerChord); 
+    const currChordIdx = Math.floor(fromStartTimeSec / this.secondsPerChord);
     // for (let _ = 0; _ < restNoteNum; _++) {
     //   noteSeries.push(restNoteClass);
     //   chordIdSeries.push(chord2idDict[currentChord]);
     // }
     // chordIdSeries.push(chord2idDict[currentChord]);
 
+    // Todo functionalize ?
     this.currKeySeq.shift();
     this.currKeySeq.push(button);
-    const chordSeq: number[] = [14, 14, 14, 14, 14, 14, 14, 14,
-                                7,  7,  7,  7,  7,  7,  7,  7]
+    // tmp
+    const chordSeq = this.fullChordIdList.slice(currChordIdx, currChordIdx + this.seqLen)
     this.predict(this.currKeySeq, chordSeq)
       .then((predNote) => {
         // Sound
