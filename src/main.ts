@@ -22,7 +22,6 @@ class SessionRun {
 
   // inner status
   private currKeySeq: number[];
-  private currChordSeq: number[];
   private lookAheadPreds: number[];
   private buttonToNoteMap: Map<number, number>;
   private fullChordIdList: number[];
@@ -52,7 +51,6 @@ class SessionRun {
     this.fullChordIdList = this.createFullChordSeq(ChordIdList, mcfg.numNoteInBar)
 
     this.currKeySeq = [];
-    this.currChordSeq = [];
     this.lookAheadPreds = [];
     this.initInnerStatus();
 
@@ -62,7 +60,6 @@ class SessionRun {
     this.setKeyUpDown();
 
     this.startMsec = this.songStart(scfg.songName) + this.msecPerChord; // since first bar is blank, tmp
-    // this.startTime = this.songStart(scfg.songName); // since first bar is blank, tmp
   };
 
   private setKeyUpDown (): void {
@@ -93,9 +90,6 @@ class SessionRun {
     for (let i = 0; i < this.seqLen; i++) {
       this.currKeySeq.push(Math.floor(Math.random() * Math.floor(this.numButton)));
     }
-    for (let i = 0; i < this.seqLen; i++) {
-      this.currChordSeq.push(Math.floor(Math.random() * Math.floor(this.numClass)));
-    }
     for (let i = 0; i < this.seqLen; ++i) {
         this.lookAheadPreds.push(-1);
     }
@@ -125,10 +119,10 @@ class SessionRun {
   }
 
   private convertKeySeq(key: number) {
+    // Todo
     // const scale = this.numButton - 1; 
     const scale = 8 - 1; 
     return 2 * (key / scale) - 1;
-    // return 2 * (key / (this.numButton)) - 1;
   }
 
   private async predict(keySeq: number[], chordSeq: number []) {
@@ -144,9 +138,9 @@ class SessionRun {
     inputs['input/enc_pl'] = encSeqT;
     inputs['input/chord_pl'] = chordSeqT;
 
-    const start = Date.now() / 1000
+    // const start = Date.now() / 1000
     const outputT = (await this.model.executeAsync(inputs) as tf.Tensor);
-    console.log(Date.now() / 1000 - start);
+    // console.log(Date.now() / 1000 - start);
     const output = Array.prototype.slice.call(tf.squeeze(outputT, [0]).arraySync());
     const argSortedOutput = argSort(output[output.length - 1]);
     let predNote: number;
@@ -162,21 +156,12 @@ class SessionRun {
   }
 
   private pressButton(button: number) {
-    // let lastTime = Date.now();
     const fromStartMsec = Math.floor(Date.now() - this.startMsec);
-    // fromLastPredTimeSec = (Date.now() - lastTime)  / 1000;
-    // lastTime            = Date.now();
-    const currChordIdx = Math.floor(fromStartMsec / (this.msecPerChord / 8 ));
-    // for (let _ = 0; _ < restNoteNum; _++) {
-    //   noteSeries.push(restNoteClass);
-    //   chordIdSeries.push(chord2idDict[currentChord]);
-    // }
-    // chordIdSeries.push(chord2idDict[currentChord]);
+    const startChordIdx = Math.floor(fromStartMsec / (this.msecPerChord / 8 ));
 
     this.currKeySeq.shift();
     this.currKeySeq.push(button);
-    const chordSeq = this.fullChordIdList.slice(currChordIdx, currChordIdx + this.seqLen)
-    // console.log(chordSeq);
+    const chordSeq = this.fullChordIdList.slice(startChordIdx, startChordIdx + this.seqLen)
     this.predict(this.currKeySeq, chordSeq)
       .then((predNote) => {
         // Sound
@@ -198,7 +183,6 @@ class SessionRun {
 
   private releaseButton(button: number) {
     const note = this.buttonToNoteMap.get(button);
-    // this.sampler.keyUp(note);
     if (!this.sustainPedalDown) {
       this.sampler.keyUp(note);
     }
