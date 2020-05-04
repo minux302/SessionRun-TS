@@ -1,6 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, SystemConfig } from './configs';
 import { PianoGenieUI } from './ui';
+import { songFactory } from './song_factory';
 const Tone = require('tone')
 const PianoSampler = require('tone-piano').Piano;
 
@@ -11,6 +12,26 @@ function convertKeySeq(key: number) {
   const scale = 7
   return 2 * (key / scale) - 1
 }
+
+
+function createFullChordSeq(chordIdList: number[], numNoteInBar: number): number[] {
+  let fullChordIdList: number[] = [];
+  for (let chordId of chordIdList) {
+    for (let i = 0; i < numNoteInBar; i++) {
+      fullChordIdList.push(chordId);
+    }
+  }
+  return fullChordIdList;
+}
+
+
+function songStart(songName: string): number{
+  const audioElem = new Audio(`{$songName}.mp3`);  
+  audioElem.volume = 0.5;
+  audioElem.play();
+  return Math.floor(Date.now() / 1000);
+}
+
 
 
 class SessionRun {
@@ -25,27 +46,40 @@ class SessionRun {
   private currChordSeq: number[];
   private lookAheadPreds: number[];
   private buttonToNoteMap: Map<number, number>;
+  private fullChordIdList: number[];
+  private secondsPerChord: number;
+  private startTime: number;
 
   private sampler: any;
   private ui: PianoGenieUI;
 
   constructor(model: tf.GraphModel,
               mcfg: ModelConfig,
+              scfg: SystemConfig,
               sampler: any,
               ui: PianoGenieUI) {
     this.model = model;
     this.seqLen = mcfg.seqLen;
     this.numButton = mcfg.numButton;
     this.numClass = mcfg.numClass;
+
+    let ChordIdList: number[];
+    let tempo: number;
+    [tempo, ChordIdList] = songFactory(scfg.songName)
+    this.secondsPerChord   = (60*4) / tempo;
+    this.fullChordIdList = createFullChordSeq(ChordIdList, mcfg.numNoteInBar)
+
     this.currKeySeq = [];
     this.currChordSeq = [];
     this.lookAheadPreds = [];
+    this.initInnerStatus();
+
     this.sampler = sampler;
     this.ui = ui;
     this.buttonToNoteMap = new Map<number, number>();
-
     this.setKeyUpDown();
-    this.initInnerStatus();
+
+    this.startTime = songStart(scfg.songName) + this.secondsPerChord; // since first bar is blank, tmp
   };
 
   private setKeyUpDown (): void {
@@ -85,8 +119,8 @@ class SessionRun {
   }
 
   private async predict(keySeq: number[], chordSeq: number []) {
-    let encSeqT:tf.Tensor;
-    let chordSeqT:tf.Tensor;
+    let encSeqT: tf.Tensor;
+    let chordSeqT: tf.Tensor;
     const encSeq = keySeq.map(convertKeySeq);
 
     encSeqT = tf.cast(encSeq, 'float32').expandDims();
@@ -109,6 +143,18 @@ class SessionRun {
   }
 
   private pressButton(button: number) {
+    // let lastTime = Date.now();
+    // const fromStartTimeSec = (Date.now() - this.startTime) / 1000;
+    // fromLastPredTimeSec = (Date.now() - lastTime)  / 1000;
+    // lastTime            = Date.now();
+    // const currentChord = songChordList[divInt(fromStartTimeSec, secondsPerChord)];
+    // const restNoteNum  = divInt(fromLastPredTimeSec, secondsPerChord); 
+    // for (let _ = 0; _ < restNoteNum; _++) {
+    //   noteSeries.push(restNoteClass);
+    //   chordIdSeries.push(chord2idDict[currentChord]);
+    // }
+    // chordIdSeries.push(chord2idDict[currentChord]);
+
     this.currKeySeq.shift();
     this.currKeySeq.push(button);
     const chordSeq: number[] = [14, 14, 14, 14, 14, 14, 14, 14,
@@ -150,7 +196,7 @@ class SessionRun {
 
 const ui = new PianoGenieUI();
 const mcfg = new ModelConfig();
-// const scfg = new SystemConfig();
+const scfg = new SystemConfig();
 
 const div = document.getElementById('piano-genie-ui');
 if (!div) {  
@@ -164,7 +210,7 @@ Promise.all([
   tf.loadGraphModel('web_model/model.json'),
   sampler.load(SALAMANDER_URL)])
   .then(([model, _]) => {
-    new SessionRun(model, mcfg, sampler, ui);
+    new SessionRun(model, mcfg, scfg, sampler, ui);
     ui.setReady();
   }
 );

@@ -6,6 +6,7 @@ export class ModelConfig {
 }
 
 export class SystemConfig {
+  songName: string = "autumn_leaves";
   modelPath: string = "web_model/model.json";
 
 }

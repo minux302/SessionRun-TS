@@ -32,23 +32,23 @@ function chord2ID(chord: string): number{
 
 
 export function songFactory(songName: string): [number, number[]] {
-  let chordListParts: string[];
+  let chordList: string[];
   let tempo: number;
   // let repeat_num: number;
   if (songName === 'autumn_leaves') {
-    chordListParts = ['cm', 'f' , 'bb', 'eb',
-                      'a' , 'd' , 'gm', 'gm',
-                      'cm', 'f' , 'bb', 'eb',
-                      'a' , 'd' , 'g' , 'g' ,
-                      'a' , 'd' , 'gm', 'gm',
-                      'cm', 'f' , 'bb', 'eb',
-                      'a' , 'd' , 'gm', 'fm',
-                      'a' , 'd' , 'gm', 'gm']
+    chordList = ['cm', 'f' , 'bb', 'eb',
+                 'a' , 'd' , 'gm', 'gm',
+                 'cm', 'f' , 'bb', 'eb',
+                 'a' , 'd' , 'g' , 'g' ,
+                 'a' , 'd' , 'gm', 'gm',
+                 'cm', 'f' , 'bb', 'eb',
+                 'a' , 'd' , 'gm', 'fm',
+                 'a' , 'd' , 'gm', 'gm']
     tempo = 120
     // repeat_num = 3
   } else {
     // Todo check
     throw new Error(`There is not song named {$songName}`);  
   }
-  return [tempo, chordListParts.map(chord2ID)]
+  return [tempo, chordList.map(chord2ID)]
 }
