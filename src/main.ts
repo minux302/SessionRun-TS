@@ -8,6 +8,11 @@ const PianoSampler = require('tone-piano').Piano;
 const SALAMANDER_URL = 'https://storage.googleapis.com/download.magenta.tensorflow.org/demos/SalamanderPiano/';
 
 
+const argSort = (array: number[]): number[] => {
+  return array.map((x, i) => [x, i]).sort((a,b) => b[0] - a[0]).map(([x, i]) => i); 
+} 
+
+
 class SessionRun {
   // model configs
   private model: tf.GraphModel;
@@ -112,7 +117,7 @@ class SessionRun {
 
   private songStart(songName: string): number{
     const audioElem = new Audio(`songs/${songName}.mp3`);  
-    audioElem.volume = 0.3;
+    audioElem.volume = 0.03;
     // Todo rethink here ()
     // Uncaught (in promise) DOMException: play() failed because the user didn't interact with the document first.
     audioElem.play();
@@ -140,15 +145,19 @@ class SessionRun {
     inputs['input/chord_pl'] = chordSeqT;
 
     // const start = Date.now() / 1000
-    const output = (await this.model.executeAsync(inputs) as tf.Tensor);
+    const outputT = (await this.model.executeAsync(inputs) as tf.Tensor);
     // console.log(Date.now() / 1000 - start);
-    const predNoteSeqT = tf.argMax(tf.squeeze(output, [0]), 1);
-    const predNote = predNoteSeqT.dataSync()[this.seqLen - 1];
-
+    const output = Array.prototype.slice.call(tf.squeeze(outputT, [0]).arraySync());
+    const argSortedOutput = argSort(output[output.length - 1]);
+    let predNote: number;
+    if (argSortedOutput[0] === this.numClass - 1) {
+      predNote = argSortedOutput[1];
+    } else {
+      predNote = argSortedOutput[0];
+    }
     encSeqT.dispose();
     chordSeqT.dispose();
-    output.dispose();
-    predNoteSeqT.dispose();
+    outputT.dispose();
     return predNote;
   }
 
