@@ -21,8 +21,11 @@ class SessionRun {
   private lookAheadPreds: number[];
   private buttonToNoteMap: Map<number, number>;
   private fullChordIdList: number[];
-  private secondsPerChord: number;
-  private startTime: number;
+  private msecPerChord: number;
+  private startMsec: number;
+
+  private sustainedNotes = new Set<number>();
+  private sustainPedalDown: boolean = false;
 
   private sampler: any;
   private ui: PianoGenieUI;
@@ -40,7 +43,7 @@ class SessionRun {
     let ChordIdList: number[];
     let tempo: number;
     [tempo, ChordIdList] = songFactory(scfg.songName)
-    this.secondsPerChord   = (60*4) / tempo;
+    this.msecPerChord   = (60*4*1000) / tempo;
     this.fullChordIdList = this.createFullChordSeq(ChordIdList, mcfg.numNoteInBar)
 
     this.currKeySeq = [];
@@ -53,7 +56,8 @@ class SessionRun {
     this.buttonToNoteMap = new Map<number, number>();
     this.setKeyUpDown();
 
-    this.startTime = this.songStart(scfg.songName) + this.secondsPerChord; // since first bar is blank, tmp
+    this.startMsec = this.songStart(scfg.songName) + this.msecPerChord; // since first bar is blank, tmp
+    // this.startTime = this.songStart(scfg.songName); // since first bar is blank, tmp
   };
 
   private setKeyUpDown (): void {
@@ -107,17 +111,19 @@ class SessionRun {
   }
 
   private songStart(songName: string): number{
-    // const audioElem = new Audio(`{$songName}.mid`);  
-    const audioElem = new Audio(`autumn_leaves.mp3`);  
-    audioElem.volume = 0.5;
+    const audioElem = new Audio(`songs/${songName}.mp3`);  
+    audioElem.volume = 0.3;
+    // Todo rethink here ()
+    // Uncaught (in promise) DOMException: play() failed because the user didn't interact with the document first.
     audioElem.play();
-    return Math.floor(Date.now() / 1000);
+    return Date.now();
   }
 
   private convertKeySeq(key: number) {
     // const scale = this.numButton - 1; 
     const scale = 8 - 1; 
     return 2 * (key / scale) - 1;
+    // return 2 * (key / (this.numButton)) - 1;
   }
 
   private async predict(keySeq: number[], chordSeq: number []) {
@@ -133,7 +139,9 @@ class SessionRun {
     inputs['input/enc_pl'] = encSeqT;
     inputs['input/chord_pl'] = chordSeqT;
 
+    // const start = Date.now() / 1000
     const output = (await this.model.executeAsync(inputs) as tf.Tensor);
+    // console.log(Date.now() / 1000 - start);
     const predNoteSeqT = tf.argMax(tf.squeeze(output, [0]), 1);
     const predNote = predNoteSeqT.dataSync()[this.seqLen - 1];
 
@@ -146,24 +154,29 @@ class SessionRun {
 
   private pressButton(button: number) {
     // let lastTime = Date.now();
-    const fromStartTimeSec = Math.floor(Date.now() / 1000) - this.startTime;
+    const fromStartMsec = Math.floor(Date.now() - this.startMsec);
     // fromLastPredTimeSec = (Date.now() - lastTime)  / 1000;
     // lastTime            = Date.now();
-    const currChordIdx = Math.floor(fromStartTimeSec / this.secondsPerChord);
+    const currChordIdx = Math.floor(fromStartMsec / (this.msecPerChord / 8 ));
     // for (let _ = 0; _ < restNoteNum; _++) {
     //   noteSeries.push(restNoteClass);
     //   chordIdSeries.push(chord2idDict[currentChord]);
     // }
     // chordIdSeries.push(chord2idDict[currentChord]);
 
-    // Todo functionalize ?
     this.currKeySeq.shift();
     this.currKeySeq.push(button);
-    // tmp
     const chordSeq = this.fullChordIdList.slice(currChordIdx, currChordIdx + this.seqLen)
+    // console.log(chordSeq);
     this.predict(this.currKeySeq, chordSeq)
       .then((predNote) => {
         // Sound
+        if (this.sustainPedalDown) {
+          if (this.sustainedNotes.has(predNote)) {
+            this.sampler.keyUp(predNote);
+          }
+          this.sustainedNotes.add(predNote);
+        }
         this.sampler.keyDown(predNote, undefined, 0.2);
         this.buttonToNoteMap.set(button, predNote);
         // Draw
@@ -176,7 +189,10 @@ class SessionRun {
 
   private releaseButton(button: number) {
     const note = this.buttonToNoteMap.get(button);
-    this.sampler.keyUp(note);
+    // this.sampler.keyUp(note);
+    if (!this.sustainPedalDown) {
+      this.sampler.keyUp(note);
+    }
     this.buttonToNoteMap.delete(button);
 
     this.lookAheadPreds[button] = -1;
