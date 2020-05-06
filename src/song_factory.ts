@@ -35,40 +35,15 @@ export function songFactory(songName: string): [number, number[]] {
   let tempo: number;
   // let repeat_num: number;
   if (songName === 'autumn_leaves') {
-    chordList = [
-      'cm',
-      'f',
-      'bb',
-      'eb',
-      'am',
-      'd',
-      'gm',
-      'gm',
-      'cm',
-      'f',
-      'bb',
-      'eb',
-      'am',
-      'd',
-      'gm',
-      'gm',
-      'am',
-      'd',
-      'gm',
-      'gm',
-      'cm',
-      'f',
-      'bb',
-      'eb',
-      'am',
-      'd',
-      'gm',
-      'fm',
-      'am',
-      'd',
-      'gm',
-      'gm',
-    ];
+    // prettier-ignore
+    chordList = ['cm', 'f', 'bb', 'eb',
+                 'am', 'd', 'gm', 'gm',
+                 'cm', 'f', 'bb', 'eb',
+                 'am', 'd', 'gm', 'gm',
+                 'am', 'd', 'gm', 'gm',
+                 'cm', 'f', 'bb', 'eb',
+                 'am', 'd', 'gm', 'fm',
+                 'am', 'd', 'gm', 'gm' ];
     tempo = 120;
     // repeat_num = 3
   } else {
