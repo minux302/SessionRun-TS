@@ -17,7 +17,7 @@ import { seq } from './utils';
 
 export class ButtonCanvas {
   private canvas: HTMLCanvasElement;
-  private canvasCtx: CanvasRenderingContext2D;
+  private canvasCtx: CanvasRenderingContext2D | null;
   private nbuttons!: number;
   private hues!: number[];
 
@@ -27,7 +27,7 @@ export class ButtonCanvas {
     genieDiv.appendChild(this.canvas);
     div.appendChild(genieDiv);
 
-    this.canvasCtx = this.canvas.getContext('2d')!;
+    this.canvasCtx = this.canvas.getContext('2d');
 
     this.resize(nbuttons, height, width);
     // this.redraw(null);
@@ -52,6 +52,8 @@ export class ButtonCanvas {
 
   redraw(buttonToNoteMap?: Map<number, number>): void {
     const ctx = this.canvasCtx;
+    if (ctx === null) return;
+
     const width = this.canvas.width;
     const height = this.canvas.height;
 
