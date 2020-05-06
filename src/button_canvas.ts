@@ -60,7 +60,8 @@ export class ButtonCanvas {
     ctx.clearRect(0, 0, width, height);
 
     for (let i = 0; i < this.nbuttons; ++i) {
-      const lightness = (buttonToNoteMap && buttonToNoteMap.has(i)) ? '15%' : '50%';
+      const lightness =
+        buttonToNoteMap && buttonToNoteMap.has(i) ? '15%' : '50%';
       ctx.fillStyle = 'hsl(' + this.hues[i] + ',80%,' + lightness + ')';
       const l = this.relToAbs(i);
       const r = this.relToAbs(i + 1);

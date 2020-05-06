@@ -13,6 +13,7 @@
     "browserify": "^16.2.2",
     "fs": "^0.0.1-security",
     "http-server": "^0.11.1",
+    "prettier": "^2.0.5",
     "tape": "^4.9.1",
     "ts-node": "^7.0.0",
     "tsify": "^4.0.0",
@@ -20,7 +21,8 @@
   },
   "scripts": {
     "build": "browserify src/main.ts -p [tsify] > src/main.js",
-    "serve": "http-server src"
+    "serve": "http-server src",
+    "fmt": "prettier --write ./src**/*.ts"
   },
   "description": "This model is the user interface and inference component of [Piano Genie](https://github.com/tensorflow/magenta/tree/master/magenta/models/piano_genie). Piano Genie allows you to control an 88-key piano via an intelligent 8-button interface.",
   "repository": "git+https://github.com/chrisdonahue/piano-genie-research-demo.git",

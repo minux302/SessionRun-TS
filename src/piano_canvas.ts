@@ -42,8 +42,8 @@ export class PianoCanvas {
 
     const whiteKeyWidth = width / NUMWHITEKEYS;
     const whiteKeyHeight = height;
-    const blackKeyWidth = whiteKeyWidth * .7;
-    const blackKeyHeight = height * .6;
+    const blackKeyWidth = whiteKeyWidth * 0.7;
+    const blackKeyHeight = height * 0.6;
 
     let whiteKey = 0;
 
@@ -52,14 +52,30 @@ export class PianoCanvas {
       const offset = i % 12;
       const midiNote = i + 21;
 
-      if (offset === 1 || offset === 4 || offset === 6 || offset === 9 || offset === 11) {
+      if (
+        offset === 1 ||
+        offset === 4 ||
+        offset === 6 ||
+        offset === 9 ||
+        offset === 11
+      ) {
         const center = (whiteKey / NUMWHITEKEYS) * width;
         const x = center - blackKeyWidth / 2;
-        this.midiNoteToBoundingBox.set(midiNote, [x, 0, blackKeyWidth, blackKeyHeight]);
+        this.midiNoteToBoundingBox.set(midiNote, [
+          x,
+          0,
+          blackKeyWidth,
+          blackKeyHeight,
+        ]);
       } else {
         this.midiNoteWhiteKeys.add(midiNote);
         const x = (whiteKey / NUMWHITEKEYS) * width;
-        this.midiNoteToBoundingBox.set(midiNote, [x, 0, whiteKeyWidth, whiteKeyHeight]);
+        this.midiNoteToBoundingBox.set(midiNote, [
+          x,
+          0,
+          whiteKeyWidth,
+          whiteKeyHeight,
+        ]);
         whiteKey += 1;
       }
     }
@@ -77,18 +93,18 @@ export class PianoCanvas {
       let fillStyle = this.midiNoteWhiteKeys.has(midiNote) ? 'white' : 'black';
       if (noteToHueLightnessMap && noteToHueLightnessMap.has(midiNote)) {
         // const [hue, lightness] = noteToHueLightnessMap.get(midiNote)
-        const hue_lightness = noteToHueLightnessMap.get(midiNote)
+        const hue_lightness = noteToHueLightnessMap.get(midiNote);
         if (hue_lightness !== undefined) {
-            const hue = hue_lightness[0];
-            const lightness = hue_lightness[1];
-            fillStyle = 'hsl(' + hue + ',80%,' + lightness + '%)';
+          const hue = hue_lightness[0];
+          const lightness = hue_lightness[1];
+          fillStyle = 'hsl(' + hue + ',80%,' + lightness + '%)';
         }
       }
       ctx.fillStyle = fillStyle;
 
       const bb = this.midiNoteToBoundingBox.get(midiNote);
-      if (!bb) {  
-        throw new Error('hoge');  
+      if (!bb) {
+        throw new Error('hoge');
       }
       ctx.fillRect(bb[0], bb[1], bb[2], bb[3]);
       ctx.strokeRect(bb[0], bb[1], bb[2], bb[3]);

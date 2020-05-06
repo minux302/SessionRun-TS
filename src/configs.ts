@@ -3,9 +3,9 @@ export class ModelConfig {
   numButton: number = 8;
   numClass: number = 129;
   numNoteInBar: number = 8;
-  // modelPath: string = 
+  // modelPath: string =
 }
 
 export class SystemConfig {
-  songName: string = "autumn_leaves";
+  songName: string = 'autumn_leaves';
 }
