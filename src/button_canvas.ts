@@ -20,12 +20,12 @@ export class ButtonCanvas {
   private hues!: number[];
 
   constructor(div: HTMLElement, nbuttons = 8, height = 110, width = 450) {
-    const genieDiv = document.createElement('div');
-    this.canvas = document.createElement('canvas');
+    const genieDiv = document.createElement("div");
+    this.canvas = document.createElement("canvas");
     genieDiv.appendChild(this.canvas);
     div.appendChild(genieDiv);
 
-    this.canvasCtx = this.canvas.getContext('2d')!;
+    this.canvasCtx = this.canvas.getContext("2d")!;
 
     this.resize(nbuttons, height, width);
     // this.redraw(null);
@@ -60,8 +60,9 @@ export class ButtonCanvas {
     ctx.clearRect(0, 0, width, height);
 
     for (let i = 0; i < this.nbuttons; ++i) {
-      const lightness = (buttonToNoteMap && buttonToNoteMap.has(i)) ? '15%' : '50%';
-      ctx.fillStyle = 'hsl(' + this.hues[i] + ',80%,' + lightness + ')';
+      const lightness =
+        buttonToNoteMap && buttonToNoteMap.has(i) ? "15%" : "50%";
+      ctx.fillStyle = "hsl(" + this.hues[i] + ",80%," + lightness + ")";
       const l = this.relToAbs(i);
       const r = this.relToAbs(i + 1);
       const w = r - l;
