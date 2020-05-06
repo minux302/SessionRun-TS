@@ -1,7 +1,7 @@
 import { ButtonCanvas } from './button_canvas';
 import { PianoCanvas } from './piano_canvas';
 
-const SLIDER_MAX_VALUE = 10000;
+// const SLIDER_MAX_VALUE = 10000;
 
 export class PianoGenieUI {
   readonly div: HTMLDivElement;
@@ -30,12 +30,12 @@ export class PianoGenieUI {
     this.div.appendChild(this.contentDiv);
   }
 
-  setLoading() {
+  setLoading(): void {
     this.loadingDiv.style.display = 'block';
     this.contentDiv.style.display = 'none';
   }
 
-  setReady() {
+  setReady(): void {
     this.loadingDiv.style.display = 'none';
     this.contentDiv.style.display = 'block';
   }

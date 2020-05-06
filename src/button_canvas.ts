@@ -13,9 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+import { seq } from './utils';
+
 export class ButtonCanvas {
   private canvas: HTMLCanvasElement;
-  private canvasCtx: CanvasRenderingContext2D;
+  private canvasCtx: CanvasRenderingContext2D | null;
   private nbuttons!: number;
   private hues!: number[];
 
@@ -25,35 +27,33 @@ export class ButtonCanvas {
     genieDiv.appendChild(this.canvas);
     div.appendChild(genieDiv);
 
-    this.canvasCtx = this.canvas.getContext('2d')!;
+    this.canvasCtx = this.canvas.getContext('2d');
 
     this.resize(nbuttons, height, width);
     // this.redraw(null);
     this.redraw();
   }
 
-  resize(nbuttons: number, height = 110, width = 450) {
+  resize(nbuttons: number, height = 110, width = 450): void {
     this.nbuttons = nbuttons;
     this.canvas.height = height;
     this.canvas.width = width;
-
-    this.hues = [];
-    for (let i = 0; i < nbuttons; ++i) {
-      this.hues.push((i / nbuttons) * 360);
-    }
+    this.hues = seq(nbuttons).map((i) => (i / nbuttons) * 360);
     this.redraw();
   }
 
-  getHue(button: number) {
+  getHue(button: number): number {
     return this.hues[button];
   }
 
-  private relToAbs(x: number) {
+  private relToAbs(x: number): number {
     return (x / this.nbuttons) * this.canvas.width;
   }
 
-  redraw(buttonToNoteMap?: Map<number, number>) {
+  redraw(buttonToNoteMap?: Map<number, number>): void {
     const ctx = this.canvasCtx;
+    if (ctx === null) return;
+
     const width = this.canvas.width;
     const height = this.canvas.height;
 
