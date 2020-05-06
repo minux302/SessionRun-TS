@@ -18,3 +18,9 @@ $ yarn
 $ yarn build
 $ yarn serve
 ```
+
+## Run formatter
+
+```
+$ yarn fmt
+```
