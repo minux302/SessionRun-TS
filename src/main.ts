@@ -150,9 +150,9 @@ class SessionRun {
     inputs['input/enc_pl'] = encSeqT;
     inputs['input/chord_pl'] = chordSeqT;
 
-    const start = Date.now() / 1000;
+    // const start = Date.now() / 1000;
     const outputT = (await this.model.executeAsync(inputs)) as tf.Tensor;
-    console.log(Date.now() / 1000 - start);
+    // console.log(Date.now() / 1000 - start);
     const output = Array.prototype.slice.call(
       tf.squeeze(outputT, [0]).arraySync()
     );
