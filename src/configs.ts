@@ -7,5 +7,5 @@ export class ModelConfig {
 }
 
 export class SystemConfig {
-  songName: string = "autumn_leaves";
+  songName: string = 'autumn_leaves';
 }

@@ -20,12 +20,12 @@ export class PianoCanvas {
   private midiNoteWhiteKeys: Set<number>;
 
   constructor(div: HTMLElement, height = 110, width = 450) {
-    const pianoDiv = document.createElement("div");
-    this.canvas = document.createElement("canvas");
+    const pianoDiv = document.createElement('div');
+    this.canvas = document.createElement('canvas');
     pianoDiv.appendChild(this.canvas);
     div.appendChild(pianoDiv);
 
-    this.canvasCtx = this.canvas.getContext("2d")!;
+    this.canvasCtx = this.canvas.getContext('2d')!;
 
     this.midiNoteToBoundingBox = new Map<number, number[]>();
     this.midiNoteWhiteKeys = new Set<number>();
@@ -87,24 +87,24 @@ export class PianoCanvas {
     const height = this.canvas.height;
 
     ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = 'black';
 
     const drawMidiNote = (midiNote: number) => {
-      let fillStyle = this.midiNoteWhiteKeys.has(midiNote) ? "white" : "black";
+      let fillStyle = this.midiNoteWhiteKeys.has(midiNote) ? 'white' : 'black';
       if (noteToHueLightnessMap && noteToHueLightnessMap.has(midiNote)) {
         // const [hue, lightness] = noteToHueLightnessMap.get(midiNote)
         const hue_lightness = noteToHueLightnessMap.get(midiNote);
         if (hue_lightness !== undefined) {
           const hue = hue_lightness[0];
           const lightness = hue_lightness[1];
-          fillStyle = "hsl(" + hue + ",80%," + lightness + "%)";
+          fillStyle = 'hsl(' + hue + ',80%,' + lightness + '%)';
         }
       }
       ctx.fillStyle = fillStyle;
 
       const bb = this.midiNoteToBoundingBox.get(midiNote);
       if (!bb) {
-        throw new Error("hoge");
+        throw new Error('hoge');
       }
       ctx.fillRect(bb[0], bb[1], bb[2], bb[3]);
       ctx.strokeRect(bb[0], bb[1], bb[2], bb[3]);
