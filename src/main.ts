@@ -2,18 +2,12 @@ import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, SystemConfig } from './configs';
 import { PianoGenieUI } from './ui';
 import { songFactory } from './song_factory';
+import { argSortDescending, zeros1d } from './utils';
 const Tone = require('tone');
 const PianoSampler = require('tone-piano').Piano;
 
 const SALAMANDER_URL =
   'https://storage.googleapis.com/download.magenta.tensorflow.org/demos/SalamanderPiano/';
-
-const argSort = (array: number[]): number[] => {
-  return array
-    .map((x, i) => [x, i])
-    .sort((a, b) => b[0] - a[0])
-    .map(([x, i]) => i);
-};
 
 class SessionRun {
   // model configs
@@ -48,9 +42,7 @@ class SessionRun {
     this.numButton = mcfg.numButton;
     this.numClass = mcfg.numClass;
 
-    let ChordIdList: number[];
-    let tempo: number;
-    [tempo, ChordIdList] = songFactory(scfg.songName);
+    const [tempo, ChordIdList]: [number, number[]] = songFactory(scfg.songName);
     this.msecPerChord = (60 * 4 * 1000) / tempo;
     this.fullChordIdList = this.createFullChordSeq(
       ChordIdList,
@@ -70,21 +62,21 @@ class SessionRun {
   }
 
   private setKeyUpDown(): void {
-    document.onkeydown = (evt: KeyboardEvent) => {
+    document.onkeydown = (evt: KeyboardEvent): void => {
       if (Tone.context.state !== 'running') {
         Tone.context.resume();
       }
       const key = evt.keyCode;
-      let button = key - 49;
+      const button = key - 49;
       if (button >= 0 && button < this.numButton) {
         if (!this.buttonToNoteMap.has(button)) {
           this.pressButton(button);
         }
       }
     };
-    document.onkeyup = (evt: KeyboardEvent) => {
+    document.onkeyup = (evt: KeyboardEvent): void => {
       const key = evt.keyCode;
-      let button = key - 49;
+      const button = key - 49;
       if (button >= 0 && button < this.numButton) {
         if (this.buttonToNoteMap.has(button)) {
           this.releaseButton(button);
@@ -95,9 +87,7 @@ class SessionRun {
 
   private initInnerStatus(): void {
     for (let i = 0; i < this.seqLen; i++) {
-      this.currKeySeq.push(
-        Math.floor(Math.random() * Math.floor(this.numButton))
-      );
+      this.currKeySeq.push(Math.floor(Math.random() * this.numButton));
     }
     for (let i = 0; i < this.seqLen; ++i) {
       this.lookAheadPreds.push(-1);
@@ -108,12 +98,10 @@ class SessionRun {
     chordIdList: number[],
     numNoteInBar: number
   ): number[] {
-    let fullChordIdList: number[] = [];
     // insert dummy initial chord sequence.
-    for (let i = 0; i < this.seqLen; i++) {
-      fullChordIdList.push(chordIdList[0]);
-    }
-    for (let chordId of chordIdList) {
+    const fullChordIdList: number[] = zeros1d(this.seqLen).fill(chordIdList[0]);
+
+    for (const chordId of chordIdList) {
       for (let i = 0; i < numNoteInBar; i++) {
         fullChordIdList.push(chordId);
       }
@@ -130,21 +118,20 @@ class SessionRun {
     return Date.now();
   }
 
-  private convertKeySeq(key: number) {
+  private convertKeySeq(key: number): number {
     // Todo
     // const scale = this.numButton - 1;
     const scale = 8 - 1;
     return 2 * (key / scale) - 1;
   }
 
-  private async predict(keySeq: number[], chordSeq: number[]) {
-    let encSeqT: tf.Tensor;
-    let chordSeqT: tf.Tensor;
+  private async predict(keySeq: number[], chordSeq: number[]): Promise<number> {
     const encSeq = keySeq.map(this.convertKeySeq);
-
-    encSeqT = tf.cast(encSeq, 'float32').expandDims();
-    encSeqT = tf.reshape(encSeqT, [1, this.seqLen, 1]);
-    chordSeqT = tf.cast(chordSeq, 'int32').expandDims();
+    const encSeqT: tf.Tensor = tf
+      .cast(encSeq, 'float32')
+      .expandDims()
+      .reshape([1, this.seqLen, 1]);
+    const chordSeqT: tf.Tensor = tf.cast(chordSeq, 'int32').expandDims();
 
     const inputs: { [name: string]: tf.Tensor } = {};
     inputs['input/enc_pl'] = encSeqT;
@@ -156,20 +143,19 @@ class SessionRun {
     const output = Array.prototype.slice.call(
       tf.squeeze(outputT, [0]).arraySync()
     );
-    const argSortedOutput = argSort(output[output.length - 1]);
-    let predNote: number;
-    if (argSortedOutput[0] === this.numClass - 1) {
-      predNote = argSortedOutput[1];
-    } else {
-      predNote = argSortedOutput[0];
-    }
+    const argSortedOutput = argSortDescending(output[output.length - 1]);
+    const predNote: number =
+      argSortedOutput[0] === this.numClass - 1
+        ? argSortedOutput[1]
+        : argSortedOutput[0];
+
     encSeqT.dispose();
     chordSeqT.dispose();
     outputT.dispose();
     return predNote;
   }
 
-  private pressButton(button: number) {
+  private pressButton(button: number): void {
     const fromStartMsec = Math.floor(Date.now() - this.startMsec);
     const startChordIdx = Math.floor(fromStartMsec / (this.msecPerChord / 8));
 
@@ -196,7 +182,7 @@ class SessionRun {
     });
   }
 
-  private releaseButton(button: number) {
+  private releaseButton(button: number): void {
     const note = this.buttonToNoteMap.get(button);
     if (!this.sustainPedalDown) {
       this.sampler.keyUp(note);
@@ -208,7 +194,7 @@ class SessionRun {
     this.redrawPiano();
   }
 
-  private redrawPiano() {
+  private redrawPiano(): void {
     const noteToHueLightnessMap = new Map<number, [number, number]>();
     for (let i = 0; i < this.numButton; ++i) {
       const hue = this.ui.genieCanvas.getHue(i);

@@ -34,7 +34,7 @@ export class PianoCanvas {
     this.redraw();
   }
 
-  resize(height: number, width: number) {
+  resize(height: number, width: number): void {
     this.canvas.height = height;
     this.canvas.width = width;
 
@@ -81,7 +81,7 @@ export class PianoCanvas {
     }
   }
 
-  redraw(noteToHueLightnessMap?: Map<number, [number, number]>) {
+  redraw(noteToHueLightnessMap?: Map<number, [number, number]>): void {
     const ctx = this.canvasCtx;
     const width = this.canvas.width;
     const height = this.canvas.height;
@@ -89,15 +89,15 @@ export class PianoCanvas {
     ctx.clearRect(0, 0, width, height);
     ctx.strokeStyle = 'black';
 
-    const drawMidiNote = (midiNote: number) => {
+    const drawMidiNote = (midiNote: number): void => {
       let fillStyle = this.midiNoteWhiteKeys.has(midiNote) ? 'white' : 'black';
       if (noteToHueLightnessMap && noteToHueLightnessMap.has(midiNote)) {
         // const [hue, lightness] = noteToHueLightnessMap.get(midiNote)
-        const hue_lightness = noteToHueLightnessMap.get(midiNote);
-        if (hue_lightness !== undefined) {
-          const hue = hue_lightness[0];
-          const lightness = hue_lightness[1];
-          fillStyle = 'hsl(' + hue + ',80%,' + lightness + '%)';
+        const hueLightness = noteToHueLightnessMap.get(midiNote);
+        if (hueLightness !== undefined) {
+          const hue = hueLightness[0];
+          const lightness = hueLightness[1];
+          fillStyle = `hsl(${hue}, 80%, ${lightness}%)`;
         }
       }
       ctx.fillStyle = fillStyle;

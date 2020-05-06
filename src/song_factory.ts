@@ -31,12 +31,14 @@ function chord2ID(chord: string): number {
 }
 
 export function songFactory(songName: string): [number, number[]] {
-  let chordList: string[];
-  let tempo: number;
-  // let repeat_num: number;
-  if (songName === 'autumn_leaves') {
-    // prettier-ignore
-    chordList = ['cm', 'f', 'bb', 'eb',
+  if (songName !== 'autumn_leaves') {
+    // Todo check
+    throw new Error(`There is not song named ${songName}`);
+  }
+
+  // const repeat_num: number = 3;
+  // prettier-ignore
+  const chordList: string[] = ['cm', 'f', 'bb', 'eb',
                  'am', 'd', 'gm', 'gm',
                  'cm', 'f', 'bb', 'eb',
                  'am', 'd', 'gm', 'gm',
@@ -44,11 +46,6 @@ export function songFactory(songName: string): [number, number[]] {
                  'cm', 'f', 'bb', 'eb',
                  'am', 'd', 'gm', 'fm',
                  'am', 'd', 'gm', 'gm' ];
-    tempo = 120;
-    // repeat_num = 3
-  } else {
-    // Todo check
-    throw new Error(`There is not song named ${songName}`);
-  }
+  const tempo: number = 120;
   return [tempo, chordList.map(chord2ID)];
 }
