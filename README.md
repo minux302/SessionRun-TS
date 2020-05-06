@@ -1,26 +1,32 @@
 # SessionRun-TS
 
-- requirements
+## Requirements
 
-```
-node-js===8.11.1
-```
+- Node.js 8.11.1
 
 ## Setup
 
-```
+1. put `songs` and `web_model` in `dist` (This step will be removed in the future.)
+2. install dependencies
+
+```sh
 $ yarn
 ```
 
-## How to compile
+## How to start
 
-```
-$ yarn build
-$ yarn serve
+```sh
+$ yarn start
 ```
 
 ## Run formatter
 
-```
+```sh
 $ yarn fmt
+```
+
+## Build
+
+```sh
+$ yarn build
 ```
